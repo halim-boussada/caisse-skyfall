@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Plus, Minus, Trash2, ShoppingCart, Coffee, Utensils, Clock, Search } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingCart, Utensils, Search } from 'lucide-react';
 import { getTables, getMenuItems, getCategories, addOrder, getOrders, updateTable } from '@/lib/storage';
 import { Table, MenuItem, Category } from '@/lib/types';
 import { toast } from 'sonner';
@@ -96,15 +96,6 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
   };
 
   const handleSelectTable = (table: Table) => {
-    const status = getTableStatus(table);
-    if (status.text === 'Occupied') {
-      toast.error('This table is already occupied');
-      return;
-    }
-    if (status.text === 'Active Order') {
-      toast.error('This table already has an active order');
-      return;
-    }
     setSelectedTable(table);
     setStep('items');
   };
@@ -140,7 +131,13 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
       };
 
       addOrder(newOrder);
-      updateTable(selectedTable.id, { status: 'occupied' });
+      
+      // Update table status to occupied if it's not already
+      const currentTable = tables.find(t => t.id === selectedTable.id);
+      if (currentTable?.status !== 'occupied') {
+        updateTable(selectedTable.id, { status: 'occupied' });
+      }
+      
       toast.success(`Order created successfully for Table ${selectedTable.number}`);
       onOrderCreated();
       onClose();
@@ -155,6 +152,8 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
   const handleBack = () => {
     if (step === 'items') {
       setStep('table');
+      setSelectedTable(null);
+      setCart([]);
     } else if (step === 'review') {
       setStep('items');
     }
@@ -223,21 +222,28 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
         <div className="flex-1 overflow-y-auto p-6">
           {step === 'table' && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Select a Table</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Select a Table</h2>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-green-500"></span> Available
+                  </span>
+                  <span className="inline-flex items-center gap-1 ml-3">
+                    <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Active Order
+                  </span>
+                  <span className="inline-flex items-center gap-1 ml-3">
+                    <span className="w-3 h-3 rounded-full bg-red-500"></span> Occupied
+                  </span>
+                </div>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {tables.map((table) => {
                   const status = getTableStatus(table);
-                  const isAvailable = status.text === 'Available';
                   return (
                     <button
                       key={table.id}
                       onClick={() => handleSelectTable(table)}
-                      disabled={!isAvailable}
-                      className={`relative p-4 rounded-xl border-2 transition-all ${
-                        isAvailable
-                          ? 'hover:border-amber-400 hover:shadow-lg hover:scale-105 cursor-pointer'
-                          : 'opacity-50 cursor-not-allowed'
-                      } ${
+                      className={`relative p-4 rounded-xl border-2 transition-all hover:border-amber-400 hover:shadow-lg hover:scale-105 cursor-pointer ${
                         selectedTable?.id === table.id
                           ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
                           : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700/30'

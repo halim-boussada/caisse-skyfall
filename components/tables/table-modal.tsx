@@ -176,59 +176,8 @@ export default function TableModal({ position, onClose, onTableCreated }: TableM
         </DialogHeader>
 
         {existingTable ? (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-700">
-              <TabsTrigger value="order">Add Items</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="order" className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-amber-50 mb-3">Menu Items</h3>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {menuItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-slate-600"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-amber-50">{item.name}</p>
-                        <p className="text-xs text-slate-400">${item.price.toFixed(2)}</p>
-                      </div>
-                      <input
-                        type="number"
-                        min="0"
-                        max="10"
-                        value={selectedItems.get(item.id) || 0}
-                        onChange={(e) => handleItemQuantity(item.id, parseInt(e.target.value))}
-                        className="w-12 px-2 py-1 bg-slate-600 border border-slate-500 text-white rounded text-center"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end border-t border-slate-700 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="bg-slate-700 border-slate-600 hover:bg-slate-600"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddItems}
-                  disabled={loading || selectedItems.size === 0}
-                  className="bg-amber-600 hover:bg-amber-500"
-                >
-                  {loading ? 'Adding...' : 'Add Items'}
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-4">
-              <div>
+        <div>
+           <div>
                 <label className="block text-sm font-medium text-amber-50 mb-2">
                   Table Number
                 </label>
@@ -266,8 +215,7 @@ export default function TableModal({ position, onClose, onTableCreated }: TableM
                   {loading ? 'Saving...' : 'Save'}
                 </Button>
               </div>
-            </TabsContent>
-          </Tabs>
+        </div>
         ) : (
           <div className="space-y-4">
             <div>
