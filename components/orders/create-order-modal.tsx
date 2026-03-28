@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Plus, Minus, Trash2, ShoppingCart, Utensils, Search } from 'lucide-react';
+import { X, Plus, Trash2, ShoppingCart, Utensils, Search } from 'lucide-react';
 import { getTables, getMenuItems, getCategories, addOrder, getOrders, updateTable } from '@/lib/storage';
 import { Table, MenuItem, Category } from '@/lib/types';
 import { toast } from 'sonner';
@@ -13,8 +13,8 @@ interface CreateOrderModalProps {
 }
 
 interface CartItem extends MenuItem {
-  quantity: number;
   cartItemId: string;
+  // No quantity field - each item is separate
 }
 
 export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrderModalProps) {
@@ -57,36 +57,23 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
     return items;
   }, [selectedCategory, menuItems, searchQuery]);
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+  const totalItems = cart.length;
 
   const handleAddToCart = (item: MenuItem) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(i => i.id === item.id);
-      if (existingItem) {
-        return prevCart.map(i =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
+    // Always add as a separate item, no quantity grouping
+    setCart(prevCart => [
+      ...prevCart,
+      { 
+        ...item, 
+        cartItemId: `cart-${Date.now()}-${Math.random()}` 
       }
-      return [...prevCart, { ...item, quantity: 1, cartItemId: `cart-${Date.now()}-${Math.random()}` }];
-    });
+    ]);
     toast.success(`Added ${item.name} to order`);
   };
 
-  const handleUpdateQuantity = (itemId: string, delta: number) => {
-    setCart(prevCart => {
-      return prevCart.map(item => {
-        if (item.id === itemId) {
-          const newQuantity = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-    });
-  };
-
-  const handleRemoveFromCart = (itemId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
+  const handleRemoveFromCart = (cartItemId: string) => {
+    setCart(prevCart => prevCart.filter(item => item.cartItemId !== cartItemId));
     toast.info('Item removed from order');
   };
 
@@ -108,10 +95,11 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
 
     setLoading(true);
     try {
+      // Each cart item becomes a separate order item with quantity = 1
       const orderItems = cart.map((item, index) => ({
         id: `oi-${Date.now()}-${index}-${Math.random()}`,
         menuItemId: item.id,
-        quantity: item.quantity,
+        quantity: 1,
         unitPrice: item.price,
         itemName: item.name,
         categoryName: item.categoryId,
@@ -342,7 +330,7 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
                 )}
               </div>
 
-              {/* Cart */}
+              {/* Cart - No quantity controls, each item is separate */}
               <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Order Cart</h2>
@@ -367,39 +355,19 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
                     <div className="space-y-2 max-h-[400px] overflow-y-auto mb-4">
                       {cart.map((item) => (
                         <div key={item.cartItemId} className="bg-white dark:bg-slate-700 rounded-lg p-3">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex justify-between items-center">
                             <div className="flex-1">
                               <h3 className="font-medium text-sm text-slate-900 dark:text-white">{item.name}</h3>
                               <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
-                                ${item.price.toFixed(2)} each
+                                ${item.price.toFixed(2)}
                               </p>
                             </div>
                             <button
-                              onClick={() => handleRemoveFromCart(item.id)}
+                              onClick={() => handleRemoveFromCart(item.cartItemId)}
                               className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
                             >
-                              <Trash2 className="w-3 h-3 text-red-600 dark:text-red-400" />
+                              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                             </button>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleUpdateQuantity(item.id, -1)}
-                                className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-600 rounded hover:bg-slate-200"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="w-8 text-center font-medium text-sm">{item.quantity}</span>
-                              <button
-                                onClick={() => handleUpdateQuantity(item.id, 1)}
-                                className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-600 rounded hover:bg-slate-200"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
-                            <span className="font-bold text-sm">
-                              ${(item.price * item.quantity).toFixed(2)}
-                            </span>
                           </div>
                         </div>
                       ))}
@@ -442,8 +410,8 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
                   </div>
                   {cart.map((item) => (
                     <div key={item.cartItemId} className="flex justify-between text-sm pl-4">
-                      <span>{item.quantity}x {item.name}</span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                      <span>{item.name}</span>
+                      <span>${item.price.toFixed(2)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between pt-3 border-t-2 border-slate-200 dark:border-slate-700">

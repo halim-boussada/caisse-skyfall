@@ -2,7 +2,7 @@
 
 import { Order } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 interface OrdersTableProps {
@@ -71,6 +71,9 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
   };
 
   const getStatusBadge = (status: string, totalAmount: number, totalPaid: number) => {
+    if (status === 'canceled') {
+      return <span className="px-2 py-1 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs rounded">Canceled</span>;
+    }
     if (status === 'completed') {
       return <span className="px-2 py-1 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-xs rounded">Completed</span>;
     }
@@ -85,11 +88,12 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
 
   const getDaySummary = (dayOrders: Order[]) => {
     const totalOrders = dayOrders.length;
-    const totalRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalRevenue = dayOrders.reduce((sum, order) => sum + (order.status !== 'canceled' ? order.totalAmount : 0), 0);
     const totalPaid = dayOrders.reduce((sum, order) => sum + order.totalPaid, 0);
     const completedOrders = dayOrders.filter(o => o.status === 'completed').length;
+    const canceledOrders = dayOrders.filter(o => o.status === 'canceled').length;
     
-    return { totalOrders, totalRevenue, totalPaid, completedOrders };
+    return { totalOrders, totalRevenue, totalPaid, completedOrders, canceledOrders };
   };
 
   if (orders.length === 0) {
@@ -149,7 +153,7 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                 className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 onClick={() => toggleDay(dayKey)}
               >
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
@@ -161,7 +165,7 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                       }}
                     >
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4 rotate-90" />
                       ) : (
                         <ChevronRight className="w-4 h-4" />
                       )}
@@ -174,6 +178,11 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                     <span className="text-slate-600 dark:text-slate-400">
                       {summary.totalOrders} order{summary.totalOrders !== 1 ? 's' : ''}
                     </span>
+                    {summary.canceledOrders > 0 && (
+                      <span className="text-red-600 dark:text-red-400">
+                        {summary.canceledOrders} canceled
+                      </span>
+                    )}
                     <span className="text-green-600 dark:text-green-400 font-medium">
                       ${summary.totalRevenue.toFixed(2)}
                     </span>
@@ -197,13 +206,15 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                         <th className="text-right py-3 px-4 font-semibold text-slate-900 dark:text-slate-300">Paid</th>
                         <th className="text-center py-3 px-4 font-semibold text-slate-900 dark:text-slate-300">Status</th>
                         <th className="text-center py-3 px-4 font-semibold text-slate-900 dark:text-slate-300">Action</th>
-                       </tr>
+                      </tr>
                     </thead>
                     <tbody>
                       {dayOrders.map((order) => (
                         <tr
                           key={order.id}
-                          className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                          className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${
+                            order.status === 'canceled' ? 'bg-red-50 dark:bg-red-900/10' : ''
+                          }`}
                         >
                           <td className="py-3 px-4">
                             <p className="text-slate-600 dark:text-slate-400 text-xs">
@@ -214,16 +225,37 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                             </p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="font-semibold text-slate-900 dark:text-amber-50">Table {order.tableNumber}</p>
+                            <p className={`font-semibold ${
+                              order.status === 'canceled' 
+                                ? 'text-slate-500 dark:text-slate-500 line-through' 
+                                : 'text-slate-900 dark:text-amber-50'
+                            }`}>
+                              Table {order.tableNumber}
+                            </p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-slate-600 dark:text-slate-300">{order.items.length} item(s)</p>
+                            <p className={`${
+                              order.status === 'canceled' 
+                                ? 'text-slate-500 dark:text-slate-500 line-through' 
+                                : 'text-slate-600 dark:text-slate-300'
+                            }`}>
+                              {order.items.length} item(s)
+                            </p>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <p className="font-semibold text-slate-900 dark:text-white">${order.totalAmount.toFixed(2)}</p>
+                            <p className={`font-semibold ${
+                              order.status === 'canceled' 
+                                ? 'text-slate-500 dark:text-slate-500 line-through' 
+                                : 'text-slate-900 dark:text-white'
+                            }`}>
+                              ${order.totalAmount.toFixed(2)}
+                            </p>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <p className={order.totalPaid > 0 ? 'font-semibold text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400'}>
+                            <p className={order.totalPaid > 0 && order.status !== 'canceled' 
+                              ? 'font-semibold text-green-600 dark:text-green-400' 
+                              : 'text-slate-500 dark:text-slate-400'
+                            }>
                               ${order.totalPaid.toFixed(2)}
                             </p>
                           </td>
@@ -236,6 +268,7 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
                               size="sm"
                               onClick={() => onSelectOrder(order)}
                               className="hover:bg-slate-200 dark:hover:bg-slate-600"
+                              disabled={order.status === 'canceled'}
                             >
                               <ChevronRight className="w-4 h-4" />
                             </Button>
@@ -264,7 +297,6 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="w-4 h-4" />
               Previous
             </Button>
             <Button
@@ -274,7 +306,6 @@ export default function OrdersTable({ orders, onSelectOrder, onRefresh }: Orders
               disabled={currentPage === totalPages}
             >
               Next
-              <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
