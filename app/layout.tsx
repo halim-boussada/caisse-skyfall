@@ -8,9 +8,19 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Coffee Shop POS',
+  title: 'Skyfall',
   description: 'Modern coffee shop point of sale system for managing tables, inventory, and orders',
   generator: 'v0.app',
+
+  manifest: '/manifest.json',
+  themeColor: '#000000',
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Coffee POS',
+  },
+
   icons: {
     icon: [
       {
@@ -23,12 +33,13 @@ export const metadata: Metadata = {
       },
       {
         url: '/skyfall-logo.png',
-        type: 'image/svg+xml',
+        type: 'image/png',
       },
     ],
     apple: '/skyfall-logo.png',
   },
 }
+
 
 export default function RootLayout({
   children,

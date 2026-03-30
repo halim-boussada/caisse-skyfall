@@ -11,7 +11,7 @@ import { Order, Transaction, Table, MenuItem } from '@/lib/types';
 import { CalendarIcon, TrendingUp, TrendingDown, DollarSign, Coffee, Users, ShoppingCart, Clock, ArrowUpDown } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isSameDay, differenceInDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-
+import InstallButton from '@/components/InstallButton';
 const COLORS = ['#fbbf24', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec489a'];
 
 interface DateRange {
@@ -233,7 +233,8 @@ export default function DashboardTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+     <div className="space-y-6">
       {/* Date Range Picker */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="flex gap-2">
@@ -458,6 +459,8 @@ export default function DashboardTab() {
         </Card>
       </div>
     </div>
+    <InstallButton />
+    </>
   );
 }
 
