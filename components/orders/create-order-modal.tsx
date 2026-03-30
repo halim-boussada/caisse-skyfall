@@ -119,6 +119,15 @@ export default function CreateOrderModal({ onClose, onOrderCreated }: CreateOrde
       };
 
       addOrder(newOrder);
+
+// send to printer
+await fetch('/api/print', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(newOrder),
+});
       
       // Update table status to occupied if it's not already
       const currentTable = tables.find(t => t.id === selectedTable.id);
