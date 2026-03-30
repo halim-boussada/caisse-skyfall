@@ -4,11 +4,13 @@ const withPWA = withPWAInit({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // disable in dev
+  disable: process.env.NODE_ENV === 'development',
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {}, // ✅ IMPORTANT FIX
+
   typescript: {
     ignoreBuildErrors: true,
   },
